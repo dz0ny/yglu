@@ -1,13 +1,17 @@
-''' Evaluation of YAQL expressions '''
+""" Evaluation of YAQL expressions """
 
 import os
-import yaql
-from ruamel.yaml.nodes import (MappingNode, SequenceNode)
-from .tree import (Node, Mark, NodeException)
 
-engine = yaql.factory.YaqlFactory(allow_delegates=True).create(options={
-    'yaql.convertInputData': False,
-})
+import yaql
+from ruamel.yaml.nodes import MappingNode, SequenceNode
+
+from .tree import Mark, Node, NodeException
+
+engine = yaql.factory.YaqlFactory(allow_delegates=True).create(
+    options={
+        "yaql.convertInputData": False,
+    }
+)
 scopes = []
 stack = []
 contexts = {}
@@ -24,9 +28,9 @@ def get_context(root):
         context = contexts[key]
     else:
         context = yaql.create_context(delegates=True)
-        if 'YGLU_ENABLE_ENV' in os.environ:
-            context['$env'] = os.environ
-        context['$_'] = root
+        if "YGLU_ENABLE_ENV" in os.environ:
+            context["$env"] = os.environ
+        context["$_"] = root
         for process in context_processors:
             process(context, root)
         contexts[key] = context
@@ -42,10 +46,12 @@ def push_stack(node):
 def pop_stack():
     stack.pop()
 
+
 class Scope:
     def __init__(self, arg, this):
         self.arg = arg
         self.this = this
+
 
 def push_scope(scope):
     scopes.append(scope)
@@ -71,7 +77,7 @@ def evaluate(node, context):
     try:
         return engine(node.expression).evaluate(context=context)
     except ExpressionException as e:
-        if node.doc.errors is None:            
+        if node.doc.errors is None:
             raise e
     except Exception as e:
         error = ExpressionException(node, e)
@@ -82,6 +88,7 @@ def evaluate(node, context):
         else:
             raise error
 
+
 class Holder:
     def __init__(self, value):
         self.value = value
@@ -90,8 +97,8 @@ class Holder:
 class Expression(Node):
     def __init__(self, expression, doc, source=None):
         Node.__init__(self, doc, source)
-        if expression.startswith('.'):
-            self.expression = '$_'+expression
+        if expression.startswith("."):
+            self.expression = "$_" + expression
         else:
             self.expression = expression
         self.doc = doc
@@ -100,8 +107,8 @@ class Expression(Node):
         push_stack(self)
         context = get_context(self.doc.root).create_child_context()
         if len(scopes) > 0:
-            context['$'] = scopes[-1].arg
-            context['$this'] = scopes[-1].this
+            context["$"] = scopes[-1].arg
+            context["$this"] = scopes[-1].this
         try:
             result = evaluate(self, context)
         finally:
@@ -120,7 +127,7 @@ class Function(Node):
 
     def eval(self, arg=None):
         context = get_context(self.doc.root).create_child_context()
-        context['$'] = arg
+        context["$"] = arg
         result = evaluate(self, context)
         return result
 

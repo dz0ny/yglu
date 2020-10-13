@@ -1,23 +1,26 @@
 import os
 import sys
-from .functions import definitions
-from .expression import add_context_processor
+
 from .builder import build_all
 from .dumper import dump
+from .expression import add_context_processor
+from .functions import definitions
 from .tree import NodeException
-
 
 for definition in definitions:
     add_context_processor(definition)
 
+
 class ErrorList(list):
     def __init__(self):
         self.nodes = set()
+
     def append(self, error):
         if not isinstance(error, NodeException) or error.node not in self.nodes:
             super().append(error)
         if isinstance(error, NodeException):
             self.nodes.add(error.node)
+
 
 def process(input, output, filename=None, errors=[]):
     if filename:
